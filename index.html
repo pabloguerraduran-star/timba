@@ -57,6 +57,10 @@ select,input[type=search]{font:inherit;color:var(--fg);background:var(--bg);bord
 .chip.up{background:var(--up-soft);color:var(--up)}.chip.down{background:var(--down-soft);color:var(--down)}.chip.mute{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
 .scroll{overflow-x:auto}
 table{border-collapse:collapse;width:100%}
+#tbl{table-layout:fixed;min-width:860px}
+#tbl th{white-space:normal;line-height:1.2;vertical-align:bottom}
+#tbl th:nth-child(1){width:18%}#tbl th:nth-child(2){width:8%}#tbl th:nth-child(n+3):nth-child(-n+7){width:10%}#tbl th:nth-child(8){width:13%}#tbl th:nth-child(9){width:11%}
+#tbl td{overflow:hidden;text-overflow:ellipsis}
 th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
 td{padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
 th.n,td.n{text-align:right}
@@ -127,7 +131,7 @@ details p{margin:8px 0}
     <div class="card">
       <div class="row"><h2>Todos los jugadores</h2>
         <div><label for="q" class="sr">Buscar</label><input type="search" id="q" placeholder="Buscar jugador"></div></div>
-      <p class="note">Oficial es el índice (HDCP) con que apareció en su última timba. Sugerido es el índice que sale de sus tarjetas. Juega con son los golpes que recibió en su última timba. Handicap sugerido son los golpes que recibiría con el índice sugerido (tee azul). Toca una fila para ver el detalle.</p>
+      <p class="note">Índice oficial es el HDCP con que apareció en su última timba. Índice sugerido es el que sale de sus tarjetas. HDCP actual son los golpes que recibió en su última timba. HDCP sugerido son los golpes que recibiría con el índice sugerido (tee azul). Toca una fila para ver el detalle.</p>
       <div class="scroll"><table id="tbl"></table></div>
     </div>
     <details class="card">
@@ -295,14 +299,14 @@ function renderResult(){
   if(!p){ r.appendChild(el("p","note","Elige un jugador para ver con qué handicap debería anotarse en la próxima timba.")); return }
   var v=verdict(p), box=el("div","result");
   if(p.sug==null){
-    box.appendChild(big("Oficial",f1(p.off),"en su última timba"));
-    var d=el("div","big"); d.appendChild(el("div","k","Sugerido")); d.appendChild(el("div","s","Con "+p.rs.length+" tarjeta"+(p.rs.length==1?"":"s")+" completa"+(p.rs.length==1?"":"s")+" todavía no alcanza. Se necesitan 3. Mientras tanto juega con el oficial."));
+    box.appendChild(big("Índice oficial",f1(p.off),"en su última timba"));
+    var d=el("div","big"); d.appendChild(el("div","k","Índice sugerido")); d.appendChild(el("div","s","Con "+p.rs.length+" tarjeta"+(p.rs.length==1?"":"s")+" completa"+(p.rs.length==1?"":"s")+" todavía no alcanza. Se necesitan 3. Mientras tanto juega con el oficial."));
     box.appendChild(d);
   } else {
-    box.appendChild(big("Sugerido",f1(p.sug),"índice que debería anotar en la timba"));
-    box.appendChild(big("Juega con",String(p.rs[p.rs.length-1].c),"golpes que recibió en su última timba"));
-    box.appendChild(big("Oficial",f1(p.off),"su última timba: "+fdate(p.last)));
-    box.appendChild(big("Handicap sugerido",String(p.play),"golpes que debería recibir, tee azul"));
+    box.appendChild(big("Índice sugerido",f1(p.sug),"índice que debería anotar en la timba"));
+    box.appendChild(big("HDCP actual",String(p.rs[p.rs.length-1].c),"golpes que recibió en su última timba"));
+    box.appendChild(big("Índice oficial",f1(p.off),"su última timba: "+fdate(p.last)));
+    box.appendChild(big("HDCP sugerido",String(p.play),"golpes que debería recibir, tee azul"));
     var dd=el("div","big");dd.appendChild(el("div","k","Diferencia"));dd.appendChild(el("div","v num "+(p.delta>0?"pos":p.delta<0?"neg":""),sgn(p.delta,true)));
     var ch=el("span","chip "+v.c,v.t);dd.appendChild(ch);box.appendChild(dd);
   }
@@ -410,7 +414,7 @@ function renderPlayer(){
 function renderTable(){
   var t=$("tbl"); t.innerHTML="";
   var hd=el("thead"),tr=el("tr");
-  [["Jugador",0],["Tarjetas",1],["Oficial",1],["Sugerido",1],["Juega con",1],["Handicap sugerido",1],["Diferencia",1],["Estado",0],["Última",1]].forEach(function(x){var th=el("th",x[1]?"n":"",x[0]);tr.appendChild(th)});
+  [["Jugador",0],["Tarjetas",1],["Índice oficial",1],["Índice sugerido",1],["HDCP actual",1],["HDCP sugerido",1],["Diferencia",1],["Estado",0],["Última",1]].forEach(function(x){var th=el("th",x[1]?"n":"",x[0]);tr.appendChild(th)});
   hd.appendChild(tr);t.appendChild(hd);var tb=el("tbody");
   var q=state.q.toLowerCase();
   D.players.slice().sort(function(a,b){return (b.sug!=null)-(a.sug!=null)||b.rs.length-a.rs.length}).forEach(function(p){
