@@ -127,7 +127,7 @@ details p{margin:8px 0}
     <div class="card">
       <div class="row"><h2>Todos los jugadores</h2>
         <div><label for="q" class="sr">Buscar</label><input type="search" id="q" placeholder="Buscar jugador"></div></div>
-      <p class="note">Índice oficial es el HDCP con que apareció en su última timba. Índice sugerido es el que sale de sus tarjetas. Handicap de juego son los golpes que recibe en la cancha (tee azul). Toca una fila para ver el detalle.</p>
+      <p class="note">Oficial es el índice (HDCP) con que apareció en su última timba. Sugerido es el índice que sale de sus tarjetas. Juega con son los golpes que recibió en su última timba. Handicap sugerido son los golpes que recibiría con el índice sugerido (tee azul). Toca una fila para ver el detalle.</p>
       <div class="scroll"><table id="tbl"></table></div>
     </div>
     <details class="card">
@@ -295,13 +295,14 @@ function renderResult(){
   if(!p){ r.appendChild(el("p","note","Elige un jugador para ver con qué handicap debería anotarse en la próxima timba.")); return }
   var v=verdict(p), box=el("div","result");
   if(p.sug==null){
-    box.appendChild(big("Índice oficial",f1(p.off),"en su última timba"));
-    var d=el("div","big"); d.appendChild(el("div","k","Índice sugerido")); d.appendChild(el("div","s","Con "+p.rs.length+" tarjeta"+(p.rs.length==1?"":"s")+" completa"+(p.rs.length==1?"":"s")+" todavía no alcanza. Se necesitan 3. Mientras tanto juega con el oficial."));
+    box.appendChild(big("Oficial",f1(p.off),"en su última timba"));
+    var d=el("div","big"); d.appendChild(el("div","k","Sugerido")); d.appendChild(el("div","s","Con "+p.rs.length+" tarjeta"+(p.rs.length==1?"":"s")+" completa"+(p.rs.length==1?"":"s")+" todavía no alcanza. Se necesitan 3. Mientras tanto juega con el oficial."));
     box.appendChild(d);
   } else {
-    box.appendChild(big("Índice sugerido",f1(p.sug),"el que debería anotar en la timba"));
-    box.appendChild(big("Handicap de juego",String(p.play),"golpes que recibe, tee azul"));
-    box.appendChild(big("Índice oficial",f1(p.off),"su última timba: "+fdate(p.last)));
+    box.appendChild(big("Sugerido",f1(p.sug),"índice que debería anotar en la timba"));
+    box.appendChild(big("Juega con",String(p.rs[p.rs.length-1].c),"golpes que recibió en su última timba"));
+    box.appendChild(big("Oficial",f1(p.off),"su última timba: "+fdate(p.last)));
+    box.appendChild(big("Handicap sugerido",String(p.play),"golpes que debería recibir, tee azul"));
     var dd=el("div","big");dd.appendChild(el("div","k","Diferencia"));dd.appendChild(el("div","v num "+(p.delta>0?"pos":p.delta<0?"neg":""),sgn(p.delta,true)));
     var ch=el("span","chip "+v.c,v.t);dd.appendChild(ch);box.appendChild(dd);
   }
@@ -409,7 +410,7 @@ function renderPlayer(){
 function renderTable(){
   var t=$("tbl"); t.innerHTML="";
   var hd=el("thead"),tr=el("tr");
-  [["Jugador",0],["Tarjetas",1],["Índice oficial",1],["Índice sugerido",1],["Handicap de juego",1],["Diferencia",1],["Estado",0],["Última",1]].forEach(function(x){var th=el("th",x[1]?"n":"",x[0]);tr.appendChild(th)});
+  [["Jugador",0],["Tarjetas",1],["Oficial",1],["Sugerido",1],["Juega con",1],["Handicap sugerido",1],["Diferencia",1],["Estado",0],["Última",1]].forEach(function(x){var th=el("th",x[1]?"n":"",x[0]);tr.appendChild(th)});
   hd.appendChild(tr);t.appendChild(hd);var tb=el("tbody");
   var q=state.q.toLowerCase();
   D.players.slice().sort(function(a,b){return (b.sug!=null)-(a.sug!=null)||b.rs.length-a.rs.length}).forEach(function(p){
@@ -419,6 +420,7 @@ function renderTable(){
     r.appendChild(el("td","n",String(p.rs.length)));
     r.appendChild(el("td","n",f1(p.off)));
     r.appendChild(el("td","n",p.sug==null?"—":f1(p.sug)));
+    r.appendChild(el("td","n",String(p.rs[p.rs.length-1].c)));
     r.appendChild(el("td","n",p.play==null?"—":String(p.play)));
     r.appendChild(el("td","n "+(p.delta>0?"pos":p.delta<0?"neg":""),p.delta==null?"—":sgn(p.delta,true)));
     var td=el("td");td.appendChild(el("span","chip "+v.c,v.t));r.appendChild(td);
