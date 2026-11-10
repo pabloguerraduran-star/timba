@@ -1,0 +1,559 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><title>Handicap Timba</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cabecera + pestañas; la primera pestaña es la herramienta (elegir jugador → handicap sugerido), el resto es ranking y curiosidades. */
+:root{
+  --bg:#f2f4f3; --surface:#ffffff; --fg:#14201c; --muted:#5d6b66; --line:#d9dfdc;
+  --accent:#0f6b4f; --accent-soft:#dcefe7; --up:#b4361f; --up-soft:#f7e0da; --down:#1d5fa8; --down-soft:#dbe8f6; --ok:#5d6b66;
+  --font-display:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+  --font-body:"Instrument Sans","Helvetica Neue",Arial,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1714; --surface:#17211d; --fg:#e6ede9; --muted:#93a39b; --line:#2a3832;
+  --accent:#4fc79b; --accent-soft:#1d3a2f; --up:#ff8a73; --up-soft:#3d221c; --down:#7db4f0; --down-soft:#1c2f46; --ok:#93a39b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1714; --surface:#17211d; --fg:#e6ede9; --muted:#93a39b; --line:#2a3832;
+  --accent:#4fc79b; --accent-soft:#1d3a2f; --up:#ff8a73; --up-soft:#3d221c; --down:#7db4f0; --down-soft:#1c2f46; --ok:#93a39b; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark}}
+#acc{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--bg)}
+#acc form{width:100%;max-width:21rem;display:flex;flex-direction:column;gap:6px}
+#acc h1{margin-bottom:2px}
+#acc p{margin:0 0 10px;color:var(--muted)}
+#acc input{margin-bottom:8px;min-width:0;width:100%}
+#acc .btn{margin-top:4px;padding:11px}
+#acc .err{color:var(--up);min-height:1.3em;font-size:14px}
+#salir{margin-top:12px}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(28px,5vw,40px);line-height:1.05}
+h2{font-size:20px}h3{font-size:16px}
+.sub{color:var(--muted);margin:6px 0 0}
+.num,td.n,th.n{font-family:var(--font-data);font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line)}
+.tabs button{font:inherit;font-weight:500;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:10px 14px;cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+button:focus-visible,select:focus-visible,input:focus-visible,tr[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel[hidden]{display:none}
+.panel{display:flex;flex-direction:column;gap:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
+.picker{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.pick-row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:block;margin-bottom:4px}
+select,input[type=search]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-width:220px;max-width:100%}
+.result{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.big{display:flex;flex-direction:column;gap:2px;min-width:0}
+.big .v{font-family:var(--font-display);font-size:clamp(40px,8vw,64px);line-height:1;font-weight:700}
+.big .k{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.big .s{font-size:13px;color:var(--muted)}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.chip.up{background:var(--up-soft);color:var(--up)}.chip.down{background:var(--down-soft);color:var(--down)}.chip.mute{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th.n,td.n{text-align:right}
+tbody tr[data-k]{cursor:pointer}
+tbody tr[data-k]:hover{background:var(--bg)}
+tr.sel{background:var(--accent-soft)}
+.pos{color:var(--up)}.neg{color:var(--down)}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+svg{display:block;width:100%;height:auto}
+svg text{fill:var(--muted);font-family:var(--font-data);font-size:11px}
+.grid{stroke:var(--line);stroke-width:1}
+.card-sc{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px;font-family:var(--font-data);font-size:13px;text-align:center}
+.card-sc .hn{color:var(--muted);font-size:10px}
+.sc{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin:auto}
+.sc.bird{border-radius:50%;border:1.5px solid var(--down)}
+.sc.eag{border-radius:50%;box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--down);border:1.5px solid var(--down)}
+.sc.bog{border:1.5px solid var(--up)}
+.sc.dbl{border:1.5px solid var(--up);box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--up)}
+.rank-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.rank ol{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rank li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:baseline}
+.rank li .p{color:var(--muted);font-family:var(--font-data)}
+.rank li .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank li .vl{font-family:var(--font-data);font-variant-numeric:tabular-nums}
+.rank .ds{font-size:13px;color:var(--muted);margin:2px 0 0}
+.bar{display:grid;grid-template-columns:34px minmax(0,1fr) 54px;gap:8px;align-items:center;font-family:var(--font-data);font-size:12px;margin:3px 0}
+.bar .tr{background:var(--bg);height:14px;border-radius:3px;position:relative;overflow:hidden}
+.bar .fl{position:absolute;top:0;bottom:0;background:var(--accent);opacity:.85}
+.bar .fl.neg{background:var(--down)}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:20px;text-align:center;color:var(--muted)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.btn{font:inherit;font-weight:600;background:var(--accent);color:var(--surface);border:0;border-radius:8px;padding:9px 16px;cursor:pointer}
+.btn.ghost{background:none;color:var(--fg);border:1px solid var(--line)}
+.btn[disabled]{opacity:.45;cursor:default}
+.note{font-size:13px;color:var(--muted)}
+details summary{cursor:pointer;font-weight:600}
+details p{margin:8px 0}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+@media (prefers-reduced-motion:no-preference){.tabs button{transition:color .15s}}
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script></head><body>
+
+<div class="wrap">
+  <header>
+    <h1>Handicap Timba</h1>
+    <p class="sub" id="meta"></p>
+  </header>
+
+  <div class="tabs" role="tablist" id="tabs">
+    <button role="tab" id="t-sug" aria-selected="true" data-p="sug">Handicap sugerido</button>
+    <button role="tab" id="t-rank" aria-selected="false" data-p="rank">Rankings</button>
+    <button role="tab" id="t-best" aria-selected="false" data-p="best">Mejores rondas</button>
+    <button role="tab" id="t-holes" aria-selected="false" data-p="holes">Hoyos</button>
+    <button role="tab" id="t-timb" aria-selected="false" data-p="timb">Timbas</button>
+  </div>
+
+  <section class="panel" id="p-sug">
+    <div class="card picker">
+      <div class="pick-row">
+        <div><label for="sel">Jugador</label><select id="sel"></select></div>
+      </div>
+      <div id="result"></div>
+    </div>
+    <div class="charts" id="pcharts"></div>
+    <div class="card" id="calc"></div>
+    <div class="card" id="lastcard"></div>
+    <div class="card">
+      <div class="row"><h2>Todos los jugadores</h2>
+        <div><label for="q" class="sr">Buscar</label><input type="search" id="q" placeholder="Buscar jugador"></div></div>
+      <p class="note">Oficial es el HDCP con que apareció en su última timba. Sugerido es el que sale de sus tarjetas. Toca una fila para ver el detalle.</p>
+      <div class="scroll"><table id="tbl"></table></div>
+    </div>
+    <details class="card">
+      <summary>Cómo se calcula</summary>
+      <p>Cada tarjeta de 18 hoyos completa se convierte en un diferencial: se topa cada hoyo en doble bogey neto (par + 2 + los golpes que recibe en ese hoyo), se resta el rating de la cancha y se escala por el slope.</p>
+      <p>El sugerido es el promedio de los mejores diferenciales de sus últimas 20 tarjetas (con 3 a 5 tarjetas cuenta la mejor, con 20 las 8 mejores), por 0,96. Es el mismo método del sistema WHS, sin los ajustes por clima ni los topes de alza.</p>
+      <p>La app de golf no entrega rating ni slope. Los estimé comparando el índice con el handicap de juego que ella calcula para el tee azul: slope 103 y rating 58,3 sobre par 60. Para los jugadores que sí ingresan sus tarjetas a la federación, el sugerido queda casi igual al oficial, lo que valida el método.</p>
+      <p>Las tarjetas incompletas se excluyen. Es una sugerencia para ordenar la timba, no un handicap oficial.</p>
+    </details>
+  </section>
+
+  <section class="panel" id="p-rank" hidden><div class="rank-grid" id="ranks"></div></section>
+
+  <section class="panel" id="p-best" hidden>
+    <div class="charts">
+      <div class="card"><h2>Mejores rondas brutas</h2><p class="note">Golpes totales. Par de la cancha: 60.</p><div class="scroll"><table id="bt-gross"></table></div></div>
+      <div class="card"><h2>Mejores rondas netas</h2><p class="note">Resultado contra el par después de descontar su handicap de juego ese día.</p><div class="scroll"><table id="bt-net"></table></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-holes" hidden>
+    <div class="card">
+      <h2>Qué tan duro es cada hoyo</h2>
+      <p class="note">Promedio de golpes sobre el par de todos los jugadores, todas las timbas. S.I. es el índice de dificultad que marca la cancha.</p>
+      <div id="holebars"></div>
+    </div>
+    <div class="card">
+      <h2>El mejor y el peor hoyo de cada uno</h2>
+      <p class="note">Promedio sobre el par, con al menos 3 vueltas. Los hoyos son 1 a 18.</p>
+      <div class="scroll"><table id="holetbl"></table></div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-timb" hidden>
+    <div class="card"><h2>Timbas jugadas</h2><div class="scroll"><table id="timbtbl"></table></div></div>
+  </section>
+</div>
+
+<script>
+/* Núcleo: lectura de CSV de la app de golf + cálculo de handicap sugerido. */
+var PAR=[3,3,4,3,3,3,4,3,4,3,3,4,3,3,3,4,3,4];           // Autoclub Antofagasta, par 60
+var SI =[1,11,13,7,9,15,3,17,5,2,12,14,8,10,16,4,18,6];
+var SLOPE=103, CR=58.3, MESES={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+var ALIAS={"hernan illanes m.":"hernan illanes"};
+
+function parseCsv(t){
+  var rows=[],r=[],c="",q=false,i=0;
+  t=t.replace(/^﻿/,"");
+  for(;i<t.length;i++){var ch=t[i];
+    if(q){ if(ch=='"'){ if(t[i+1]=='"'){c+='"';i++;} else q=false; } else c+=ch; }
+    else if(ch=='"') q=true;
+    else if(ch==","){ r.push(c); c=""; }
+    else if(ch=="\n"||ch=="\r"){ if(ch=="\r"&&t[i+1]=="\n")i++; r.push(c); rows.push(r); r=[]; c=""; }
+    else c+=ch;
+  }
+  if(c!==""||r.length){ r.push(c); rows.push(r); }
+  return rows;
+}
+function normName(n){
+  var s=n.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+  return ALIAS[s]||s;
+}
+function isoDate(s){
+  var m=/([A-Z][a-z]{2})\s+(\d{1,2})\s+(\d{4})/.exec(s||""); if(!m||!MESES[m[1]])return null;
+  return m[3]+"-"+("0"+MESES[m[1]]).slice(-2)+"-"+("0"+m[2]).slice(-2);
+}
+function parseTimba(text){
+  var rows=parseCsv(text), ev="", i, date=null, rounds=[], inc=0;
+  for(i=0;i<rows.length;i++) if(rows[i].length&&rows[i][0]){ ev=rows[i][0].trim(); date=isoDate(rows[i][1]); break; }
+  for(i=0;i<rows.length;i++){
+    var r=rows[i];
+    if(r[0]&&r[0].indexOf("Autoclub")===0&&r[1]&&/\d{4}/.test(r[1])){
+      var k=i+1; while(k<rows.length&&rows[k][0]!=="Par") k++;
+      k++;
+      while(k+1<rows.length&&rows[k].length>22&&rows[k][0]&&/tee/i.test(rows[k][1]||"")){
+        var p=rows[k], s=rows[k+1];
+        var h=p.slice(3,12).concat(p.slice(13,22)), ok=h.every(function(x){return /^\d+$/.test(x)&&+x>0});
+        if(ok&&p[2]!==""&&s[2]!==""){
+          var net=parseInt((s[23]||"").replace("E","0").replace("+",""),10);
+          rounds.push({n:p[0].trim(),x:parseFloat(p[2]),c:parseFloat(s[2]),g:h.map(Number),net:isNaN(net)?null:net,d:isoDate(r[1])||date});
+        } else inc++;
+        k+=2;
+      }
+      i=k-1;
+    }
+  }
+  return {key:(date||"")+"|"+ev,ev:ev,date:date,rounds:rounds,inc:inc};
+}
+function strokesOn(c,hole){ var b=Math.floor(c/18), e=c%18; return b+(SI[hole]<=e?1:0); }
+/* Puntaje ajustado: tope de doble bogey neto por hoyo (regla WHS). */
+function adjGross(g,c){ var t=0; for(var h=0;h<18;h++){ t+=Math.min(g[h],PAR[h]+2+strokesOn(c,h)); } return t; }
+function diffOf(g,c){ var a=adjGross(g,c); return {ags:a,diff:(a-CR)*113/SLOPE}; }
+function playingHcp(idx){ return Math.round(idx*SLOPE/113+(CR-60)); }   // tee azul
+function nBest(n){ return n<3?0:n<=5?1:n<=8?2:n<=11?3:n<=14?4:n<=16?5:n<=18?6:n==19?7:8; }
+function suggest(rs){            // rs: rondas del jugador, orden cronológico
+  var last=rs.slice(-20), nb=nBest(last.length);
+  if(!nb) return null;
+  var ds=last.map(function(r,i){return {d:r.diff,i:i}}).sort(function(a,b){return a.d-b.d}).slice(0,nb);
+  var avg=ds.reduce(function(s,x){return s+x.d},0)/nb;
+  return {idx:Math.round(avg*0.96*10)/10,used:ds.map(function(x){return last[x.i]}),n:last.length,nb:nb};
+}
+function buildPlayers(timbas){
+  var map={}, all=[];
+  timbas.forEach(function(t){ t.rounds.forEach(function(r){
+    var d=diffOf(r.g,r.c), k=normName(r.n);
+    var o={k:k,n:r.n,date:t.date,ev:t.ev,key:t.key,x:r.x,c:r.c,g:r.g,net:r.net,tot:r.g.reduce(function(a,b){return a+b},0),ags:d.ags,diff:d.diff};
+    all.push(o); (map[k]=map[k]||[]).push(o);
+  });});
+  var out=Object.keys(map).map(function(k){
+    var rs=map[k].sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0});
+    var lastR=rs[rs.length-1], s=suggest(rs);
+    return {k:k,name:lastR.n,rs:rs,off:lastR.x,last:lastR.date,sug:s?s.idx:null,used:s?s.used:[],nb:s?s.nb:0,nUsed:s?s.n:rs.length,
+            play:s?playingHcp(s.idx):null,delta:s?Math.round((s.idx-lastR.x)*10)/10:null};
+  });
+  return {players:out,all:all};
+}
+
+</script>
+<script>
+var SB_URL="https://odzvggmlvzmgtmrelqdl.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kenZnZ21sdnptZ3RtcmVscWRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQyODczNzEsImV4cCI6MjEwOTg2MzM3MX0.gbOhiPtjmRf_uoVVmfVarzGwFkNT7FGY-GcJSRFiYO0";
+var TODAY=new Date();
+var state={timbas:{},sel:null,q:""};
+
+function $(id){return document.getElementById(id)}
+function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+function f1(x){return (Math.round(x*10)/10).toFixed(1).replace(".",",")}
+function sgn(x,d){var s=d?f1(x):String(x);return x>0?"+"+s:x<0?"−"+s.replace("-",""):s}
+function fdate(iso){var m=/(\d{4})-(\d\d)-(\d\d)/.exec(iso||"");if(!m)return "";var M=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];return +m[3]+" "+M[+m[2]-1]+" "+m[1].slice(2)}
+function days(iso){return Math.round((TODAY-new Date(iso+"T12:00:00"))/86400000)}
+
+var D=null;
+function recompute(){
+  var ts=Object.keys(state.timbas).map(function(k){return state.timbas[k]}).sort(function(a,b){return a.date<b.date?-1:1});
+  D=buildPlayers(ts); D.ts=ts;
+  D.players.sort(function(a,b){return a.name.localeCompare(b.name,"es")});
+  if(!state.sel||!D.players.some(function(p){return p.k===state.sel})) state.sel=null;
+}
+function getP(k){return D.players.filter(function(p){return p.k===k})[0]}
+
+function verdict(p){
+  if(p.sug==null) return {t:"Faltan tarjetas ("+p.rs.length+" de 3)",c:"mute"};
+  if(p.delta>=1) return {t:"Subir handicap",c:"up"};
+  if(p.delta<=-1) return {t:"Bajar handicap",c:"down"};
+  return {t:"Al día",c:""};
+}
+
+function renderMeta(){
+  var n=D.all.length, last=D.ts[D.ts.length-1];
+  $("meta").textContent="Autoclub Antofagasta, tee azul · "+D.ts.length+" timbas · "+n+" tarjetas completas · última timba "+fdate(last&&last.date);
+}
+
+function renderSel(){
+  var s=$("sel"); s.innerHTML="";
+  var o0=el("option",null,"Elige un jugador"); o0.value=""; s.appendChild(o0);
+  D.players.slice().sort(function(a,b){return b.rs.length-a.rs.length}).forEach(function(p){
+    var o=el("option",null,p.name+" ("+p.rs.length+")"); o.value=p.k; s.appendChild(o);});
+  s.value=state.sel||"";
+}
+
+function big(k,v,s,cls){var d=el("div","big");d.appendChild(el("div","k",k));var x=el("div","v num"+(cls?" "+cls:""),v);d.appendChild(x);if(s)d.appendChild(el("div","s",s));return d}
+
+function renderResult(){
+  var r=$("result"); r.innerHTML="";
+  var p=state.sel&&getP(state.sel);
+  if(!p){ r.appendChild(el("p","note","Elige un jugador para ver con qué handicap debería anotarse en la próxima timba.")); return }
+  var v=verdict(p), box=el("div","result");
+  if(p.sug==null){
+    box.appendChild(big("HDCP oficial",f1(p.off),"en su última timba"));
+    var d=el("div","big"); d.appendChild(el("div","k","Sugerido")); d.appendChild(el("div","s","Con "+p.rs.length+" tarjeta"+(p.rs.length==1?"":"s")+" completa"+(p.rs.length==1?"":"s")+" todavía no alcanza. Se necesitan 3. Mientras tanto juega con el oficial."));
+    box.appendChild(d);
+  } else {
+    box.appendChild(big("Anótate con",f1(p.sug),"índice sugerido"));
+    box.appendChild(big("Golpes que recibe",String(p.play),"handicap de juego, tee azul"));
+    box.appendChild(big("HDCP oficial",f1(p.off),"su última timba: "+fdate(p.last)));
+    var dd=el("div","big");dd.appendChild(el("div","k","Diferencia"));dd.appendChild(el("div","v num "+(p.delta>0?"pos":p.delta<0?"neg":""),sgn(p.delta,true)));
+    var ch=el("span","chip "+v.c,v.t);dd.appendChild(ch);box.appendChild(dd);
+  }
+  r.appendChild(box);
+  var info=[];
+  if(p.sug!=null) info.push("Calculado con sus mejores "+p.nb+" de "+p.nUsed+" tarjetas.");
+  if(days(p.last)>150) info.push("Su última tarjeta tiene "+days(p.last)+" días: el dato es antiguo.");
+  if(info.length) r.appendChild(el("p","note",info.join(" ")));
+}
+
+function lineChart(p){
+  var rs=p.rs, W=520,H=230,L=34,R=12,T=14,B=26;
+  var vals=rs.map(function(r){return r.diff}).concat(p.sug!=null?[p.sug]:[]).concat([p.off]);
+  var lo=Math.floor(Math.min.apply(null,vals)-2), hi=Math.ceil(Math.max.apply(null,vals)+2);
+  var X=function(i){return L+(rs.length>1?i*(W-L-R)/(rs.length-1):(W-L-R)/2)}, Y=function(v){return T+(hi-v)*(H-T-B)/(hi-lo)};
+  var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Diferencial por tarjeta de '+esc(p.name)+'">';
+  var step=Math.max(2,Math.round((hi-lo)/5/2)*2);
+  for(var v=Math.ceil(lo/step)*step;v<=hi;v+=step) s+='<line class="grid" x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'"/><text x="'+(L-6)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+v+'</text>';
+  var used={}; p.used.forEach(function(u){used[u.key+"|"+u.n+"|"+u.tot]=1});
+  var pts=rs.map(function(r,i){return X(i)+","+Y(r.diff)}).join(" ");
+  s+='<polyline points="'+pts+'" fill="none" stroke="var(--line)" stroke-width="2" stroke-linejoin="round"/>';
+  s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(p.off)+'" y2="'+Y(p.off)+'" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/><text x="'+(W-R)+'" y="'+(Y(p.off)-5)+'" text-anchor="end">oficial '+f1(p.off)+'</text>';
+  if(p.sug!=null) s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(p.sug)+'" y2="'+Y(p.sug)+'" stroke="var(--accent)" stroke-width="2"/><text x="'+(L+4)+'" y="'+(Y(p.sug)-5)+'" style="fill:var(--accent)">sugerido '+f1(p.sug)+'</text>';
+  rs.forEach(function(r,i){var u=used[r.key+"|"+r.n+"|"+r.tot]&&rs.length-i<=20;
+    s+='<circle cx="'+X(i)+'" cy="'+Y(r.diff)+'" r="'+(u?5:3.5)+'" fill="'+(u?'var(--accent)':'var(--surface)')+'" stroke="'+(u?'var(--accent)':'var(--muted)')+'" stroke-width="1.5"><title>'+fdate(r.date)+' · '+r.tot+' golpes · diferencial '+f1(r.diff)+'</title></circle>';});
+  s+='<text x="'+L+'" y="'+(H-6)+'">'+fdate(rs[0].date)+'</text><text x="'+(W-R)+'" y="'+(H-6)+'" text-anchor="end">'+fdate(rs[rs.length-1].date)+'</text></svg>';
+  return s;
+}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+
+function holeStats(rs){
+  var a=[];for(var h=0;h<18;h++){var t=0;rs.forEach(function(r){t+=r.g[h]-PAR[h]});a.push(rs.length?t/rs.length:0)}return a;
+}
+function groupHole(){ if(D._gh)return D._gh; return D._gh=holeStats(D.all)}
+
+function holeChart(p){
+  var ph=holeStats(p.rs), gh=groupHole(), W=520,H=230,L=34,R=8,T=14,B=26;
+  var lo=Math.min(-0.2,Math.min.apply(null,ph.concat(gh))), hi=Math.max(1.5,Math.max.apply(null,ph.concat(gh)));
+  var bw=(W-L-R)/18, Y=function(v){return T+(hi-v)*(H-T-B)/(hi-lo)};
+  var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Promedio sobre el par por hoyo de '+esc(p.name)+'">';
+  [0,1,2].forEach(function(v){if(v<=hi)s+='<line class="grid" x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'"/><text x="'+(L-6)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+(v>0?"+":"")+v+'</text>'});
+  ph.forEach(function(v,i){var y0=Y(0),y=Y(v);
+    s+='<rect x="'+(L+i*bw+3)+'" y="'+Math.min(y0,y)+'" width="'+(bw-6)+'" height="'+Math.max(1,Math.abs(y-y0))+'" fill="'+(v<0?'var(--down)':'var(--accent)')+'" opacity=".85"><title>Hoyo '+(i+1)+': '+sgn(v,true)+' sobre el par (grupo '+sgn(gh[i],true)+')</title></rect>';
+    s+='<line x1="'+(L+i*bw+1)+'" x2="'+(L+(i+1)*bw-1)+'" y1="'+Y(gh[i])+'" y2="'+Y(gh[i])+'" stroke="var(--fg)" stroke-width="2"/>';
+    s+='<text x="'+(L+i*bw+bw/2)+'" y="'+(H-8)+'" text-anchor="middle">'+(i+1)+'</text>'});
+  return s+'</svg>';
+}
+
+function scoreCard(r){
+  var wrap=el("div");
+  [[0,9],[9,18]].forEach(function(rg){
+    var g=el("div","card-sc");
+    for(var h=rg[0];h<rg[1];h++){var c=el("div");c.appendChild(el("div","hn","H"+(h+1)));
+      var d=r.g[h]-PAR[h], cls=d<=-2?"eag":d==-1?"bird":d==1?"bog":d>=2?"dbl":"";
+      c.appendChild(el("span","sc "+cls,String(r.g[h])));g.appendChild(c);
+      c.appendChild(el("div","hn","par "+PAR[h]));}
+    g.style.marginBottom="10px";wrap.appendChild(g);});
+  return wrap;
+}
+
+function capList(r){
+  var o=[];for(var h=0;h<18;h++){var cap=PAR[h]+2+strokesOn(r.c,h);if(r.g[h]>cap)o.push({h:h,g:r.g[h],cap:cap})}return o;
+}
+function renderCalc(p,box){
+  box.appendChild(el("h2",null,"Tarjetas con las que se calcula"));
+  var win=p.rs.slice(-20), older=p.rs.length-win.length;
+  box.appendChild(el("p","note","Se usan sus últimas "+win.length+" tarjetas completas"+(older?" ("+older+" más antiguas quedan fuera)":"")+". En cada hoyo se anota como máximo doble bogey neto: par + 2 + los golpes que recibe en ese hoyo según su handicap de juego de ese día. La columna Ajustes muestra los hoyos topados, como hoyo: golpes reales → golpes que cuentan."));
+  var t=el("table"),hd=el("thead"),tr=el("tr");
+  [["Fecha",0],["Timba",0],["Hcp juego",1],["Bruto",1],["Ajustado",1],["Ajustes",0],["Diferencial",1],["Cuenta",0]].forEach(function(x){tr.appendChild(el("th",x[1]?"n":"",x[0]))});
+  hd.appendChild(tr);t.appendChild(hd);var tb=el("tbody");
+  win.slice().reverse().forEach(function(r){
+    var u=p.used.indexOf(r)>=0, cl=capList(r), row=el("tr",u?"sel":"");
+    row.appendChild(el("td",null,fdate(r.date)));row.appendChild(el("td",null,r.ev));
+    row.appendChild(el("td","n",String(r.c)));row.appendChild(el("td","n",String(r.tot)));
+    row.appendChild(el("td","n",String(r.ags)));
+    row.appendChild(el("td",null,cl.length?cl.map(function(x){return "H"+(x.h+1)+": "+x.g+" → "+x.cap}).join(" · "):"sin ajustes"));
+    row.appendChild(el("td","n",f1(r.diff)));
+    var c=el("td");if(u)c.appendChild(el("span","chip","Sí"));else c.appendChild(el("span","chip mute","No"));row.appendChild(c);
+    tb.appendChild(row)});
+  t.appendChild(tb);var sc=el("div","scroll");sc.appendChild(t);box.appendChild(sc);
+  if(p.sug!=null){
+    var avg=p.used.reduce(function(s,x){return s+x.diff},0)/p.used.length;
+    box.appendChild(el("p","note","Promedio de los "+p.nb+" mejores diferenciales ("+p.used.map(function(x){return f1(x.diff)}).join("; ")+") = "+f1(avg)+". Por 0,96 da un índice sugerido de "+f1(p.sug)+". Diferencial = (ajustado − 58,3) × 113 ÷ 103."));
+  }
+}
+function renderPlayer(){
+  var c=$("pcharts"), lc=$("lastcard"), cc=$("calc"); c.innerHTML="";lc.innerHTML="";cc.innerHTML="";
+  var p=state.sel&&getP(state.sel);
+  c.hidden=lc.hidden=cc.hidden=!p;
+  if(!p) return;
+  renderCalc(p,cc);
+  var a=el("div","card");a.appendChild(el("h3",null,"Sus tarjetas, de la más antigua a la más reciente"));
+  var lg=el("div","legend");lg.innerHTML='<span><span class="dot" style="background:var(--accent)"></span>cuenta para el sugerido</span><span><span class="dot" style="background:var(--surface);border:1.5px solid var(--muted)"></span>no cuenta</span>';
+  a.appendChild(lg);var h=el("div");h.innerHTML=lineChart(p);a.appendChild(h);
+  a.appendChild(el("p","note","Cada punto es el diferencial de una tarjeta, en puntos de índice. Más bajo es mejor."));c.appendChild(a);
+  var b=el("div","card");b.appendChild(el("h3",null,"Promedio por hoyo contra el par"));
+  var lg2=el("div","legend");lg2.innerHTML='<span>barra: el jugador</span><span>línea negra: promedio del grupo</span>';b.appendChild(lg2);
+  var h2=el("div");h2.innerHTML=holeChart(p);b.appendChild(h2);c.appendChild(b);
+  var r=p.rs[p.rs.length-1];
+  lc.appendChild(el("h3",null,"Última tarjeta · "+fdate(r.date)+" · "+r.ev));
+  lc.appendChild(el("p","note",r.tot+" golpes, "+sgn(r.tot-60)+" sobre el par · neto "+(r.net==null?"":sgn(r.net))+" con handicap de juego "+r.c+". Círculo es birdie, cuadro es bogey."));
+  lc.appendChild(scoreCard(r));
+}
+
+function renderTable(){
+  var t=$("tbl"); t.innerHTML="";
+  var hd=el("thead"),tr=el("tr");
+  [["Jugador",0],["Tarjetas",1],["Oficial",1],["Sugerido",1],["Juega con",1],["Diferencia",1],["Estado",0],["Última",1]].forEach(function(x){var th=el("th",x[1]?"n":"",x[0]);tr.appendChild(th)});
+  hd.appendChild(tr);t.appendChild(hd);var tb=el("tbody");
+  var q=state.q.toLowerCase();
+  D.players.slice().sort(function(a,b){return (b.sug!=null)-(a.sug!=null)||b.rs.length-a.rs.length}).forEach(function(p){
+    if(q&&normName(p.name).indexOf(normName(q))<0) return;
+    var v=verdict(p), r=el("tr",p.k===state.sel?"sel":"");r.setAttribute("data-k",p.k);r.tabIndex=0;
+    r.appendChild(el("td",null,p.name));
+    r.appendChild(el("td","n",String(p.rs.length)));
+    r.appendChild(el("td","n",f1(p.off)));
+    r.appendChild(el("td","n",p.sug==null?"—":f1(p.sug)));
+    r.appendChild(el("td","n",p.play==null?"—":String(p.play)));
+    r.appendChild(el("td","n "+(p.delta>0?"pos":p.delta<0?"neg":""),p.delta==null?"—":sgn(p.delta,true)));
+    var td=el("td");td.appendChild(el("span","chip "+v.c,v.t));r.appendChild(td);
+    r.appendChild(el("td","n",fdate(p.last)));
+    tb.appendChild(r)});
+  t.appendChild(tb);
+}
+
+function rankCard(title,desc,rows,fmt){
+  var c=el("div","card rank");c.appendChild(el("h3",null,title));if(desc)c.appendChild(el("p","ds",desc));
+  var ol=el("ol");
+  if(!rows.length) ol.appendChild(el("li",null,"Sin datos suficientes"));
+  rows.slice(0,6).forEach(function(r,i){var li=el("li");li.appendChild(el("span","p",String(i+1)));li.appendChild(el("span","nm",r.n));li.appendChild(el("span","vl",fmt(r)));ol.appendChild(li)});
+  c.appendChild(ol);return c;
+}
+function mean(a){return a.reduce(function(x,y){return x+y},0)/a.length}
+function renderRanks(){
+  var g=$("ranks");g.innerHTML="";
+  var P=D.players;
+  // victorias: menor neto por timba
+  var wins={};D.ts.forEach(function(t){var m=Math.min.apply(null,t.rounds.filter(function(r){return r.net!=null}).map(function(r){return r.net}));
+    if(isFinite(m)&&t.rounds.length>=3) t.rounds.forEach(function(r){if(r.net===m){var k=normName(r.n);wins[k]=(wins[k]||0)+1}})});
+  var w=Object.keys(wins).map(function(k){return {n:getP(k).name,v:wins[k]}}).sort(function(a,b){return b.v-a.v});
+  g.appendChild(rankCard("Más timbas ganadas","Mejor resultado neto de la fecha. Empates cuentan para todos. Solo timbas con 3 o más jugadores.",w,function(r){return r.v}));
+  var m5=P.filter(function(p){return p.rs.length>=5});
+  g.appendChild(rankCard("Mejor promedio neto","Contra el par, con su handicap de cada día. Mínimo 5 tarjetas.",m5.map(function(p){return {n:p.name,v:mean(p.rs.map(function(r){return r.net}))}}).sort(function(a,b){return a.v-b.v}),function(r){return sgn(r.v,true)}));
+  g.appendChild(rankCard("Mejor promedio bruto","Golpes por vuelta. Mínimo 5 tarjetas.",m5.map(function(p){return {n:p.name,v:mean(p.rs.map(function(r){return r.tot}))}}).sort(function(a,b){return a.v-b.v}),function(r){return f1(r.v)}));
+  function cnt(f){return P.map(function(p){var t=0;p.rs.forEach(function(r){r.g.forEach(function(x,h){if(f(x-PAR[h]))t++})});return {n:p.name,v:t}}).filter(function(r){return r.v>0}).sort(function(a,b){return b.v-a.v})}
+  g.appendChild(rankCard("Más birdies o mejor","Hoyos en un golpe bajo el par o menos.",cnt(function(d){return d<=-1}),function(r){return r.v}));
+  g.appendChild(rankCard("Más pares","Hoyos hechos en el par exacto.",cnt(function(d){return d===0}),function(r){return r.v}));
+  g.appendChild(rankCard("Más dobles o peor","Los hoyos que preferiríamos olvidar: dos golpes sobre el par o más.",cnt(function(d){return d>=2}),function(r){return r.v}));
+  g.appendChild(rankCard("El más constante","Desviación de sus golpes por vuelta. Menos es más parejo. Mínimo 5 tarjetas.",m5.map(function(p){var ms=mean(p.rs.map(function(r){return r.tot}));return {n:p.name,v:Math.sqrt(mean(p.rs.map(function(r){return Math.pow(r.tot-ms,2)})))}}).sort(function(a,b){return a.v-b.v}),function(r){return "±"+f1(r.v)}));
+  var m10=P.filter(function(p){return p.rs.length>=10});
+  g.appendChild(rankCard("El que más mejoró","Promedio de sus primeras 5 tarjetas menos el de las últimas 5, en golpes. Mínimo 10 tarjetas.",m10.map(function(p){return {n:p.name,v:mean(p.rs.slice(0,5).map(function(r){return r.tot}))-mean(p.rs.slice(-5).map(function(r){return r.tot}))}}).sort(function(a,b){return b.v-a.v}),function(r){return (r.v>0?"−":"+")+f1(Math.abs(r.v))+" golpes"}));
+  g.appendChild(rankCard("El más aplicado","Más timbas jugadas.",P.map(function(p){return {n:p.name,v:p.rs.length}}).sort(function(a,b){return b.v-a.v}),function(r){return r.v}));
+  g.appendChild(rankCard("Más lejos del oficial","Cuánto le falta al HDCP oficial para parecerse a sus tarjetas. Positivo: debería subir.",P.filter(function(p){return p.delta!=null}).sort(function(a,b){return Math.abs(b.delta)-Math.abs(a.delta)}).map(function(p){return {n:p.name,v:p.delta}}),function(r){return sgn(r.v,true)}));
+}
+
+function bestTable(id,key,hdr){
+  var t=$(id);t.innerHTML="";var hd=el("thead"),tr=el("tr");
+  ["#","Jugador","Fecha","Timba",hdr].forEach(function(x,i){tr.appendChild(el("th",i==4||i==0?"n":"",x))});hd.appendChild(tr);t.appendChild(hd);
+  var tb=el("tbody");
+  D.all.filter(function(r){return r.net!=null}).sort(function(a,b){return key=="tot"?a.tot-b.tot||a.net-b.net:a.net-b.net||a.tot-b.tot}).slice(0,12).forEach(function(r,i){
+    var row=el("tr");row.appendChild(el("td","n",String(i+1)));row.appendChild(el("td",null,r.n));row.appendChild(el("td",null,fdate(r.date)));row.appendChild(el("td",null,r.ev));
+    row.appendChild(el("td","n",key=="tot"?r.tot+" ("+sgn(r.tot-60)+")":sgn(r.net)+" · hcp "+r.c));tb.appendChild(row)});
+  t.appendChild(tb);
+}
+function renderBest(){bestTable("bt-gross","tot","Golpes");bestTable("bt-net","net","Neto")}
+
+function renderHoles(){
+  var gh=groupHole(), box=$("holebars");box.innerHTML="";
+  var mx=Math.max.apply(null,gh);
+  gh.forEach(function(v,i){var b=el("div","bar");b.appendChild(el("span",null,"H"+(i+1)));
+    var tr=el("div","tr"),fl=el("div","fl"+(v<0?" neg":""));fl.style.left="0";fl.style.width=Math.max(1,Math.abs(v)/mx*100)+"%";tr.appendChild(fl);b.appendChild(tr);
+    b.appendChild(el("span",null,sgn(v,true)));
+    b.title="Par "+PAR[i]+", S.I. "+SI[i];box.appendChild(b)});
+  box.appendChild(el("p","note","Par por hoyo: "+PAR.join(" ")+". S.I.: "+SI.join(" ")+"."));
+  var t=$("holetbl");t.innerHTML="";var hd=el("thead"),tr=el("tr");
+  ["Jugador","Mejor hoyo","Peor hoyo","Birdies"].forEach(function(x,i){tr.appendChild(el("th",i==3?"n":"",x))});hd.appendChild(tr);t.appendChild(hd);var tb=el("tbody");
+  D.players.filter(function(p){return p.rs.length>=3}).sort(function(a,b){return b.rs.length-a.rs.length}).forEach(function(p){
+    var s=holeStats(p.rs), bi=0,wi=0;s.forEach(function(v,i){if(v<s[bi])bi=i;if(v>s[wi])wi=i});
+    var bd=0;p.rs.forEach(function(r){r.g.forEach(function(x,h){if(x-PAR[h]<=-1)bd++})});
+    var row=el("tr");row.appendChild(el("td",null,p.name));
+    row.appendChild(el("td",null,"H"+(bi+1)+" · "+sgn(s[bi],true)));row.appendChild(el("td",null,"H"+(wi+1)+" · "+sgn(s[wi],true)));row.appendChild(el("td","n",String(bd)));tb.appendChild(row)});
+  t.appendChild(tb);
+}
+
+function renderTimbas(){
+  var t=$("timbtbl");t.innerHTML="";var hd=el("thead"),tr=el("tr");
+  ["Fecha","Timba","Tarjetas","Ganó (neto)","Excluidas"].forEach(function(x,i){tr.appendChild(el("th",i==2||i==4?"n":"",x))});hd.appendChild(tr);t.appendChild(hd);var tb=el("tbody");
+  D.ts.slice().reverse().forEach(function(x){
+    var m=Math.min.apply(null,x.rounds.map(function(r){return r.net==null?99:r.net}));
+    var wn=x.rounds.length>=3?x.rounds.filter(function(r){return r.net===m}).map(function(r){return r.n}).join(", ")+" ("+sgn(m)+")":"—";
+    var row=el("tr");row.appendChild(el("td",null,fdate(x.date)));row.appendChild(el("td",null,x.ev));row.appendChild(el("td","n",String(x.rounds.length)));row.appendChild(el("td",null,wn));row.appendChild(el("td","n",x.inc?String(x.inc):""));tb.appendChild(row)});
+  t.appendChild(tb);
+}
+
+function renderAll(){recompute();renderMeta();renderSel();renderResult();renderPlayer();renderTable();renderRanks();renderBest();renderHoles();renderTimbas()}
+
+/* eventos */
+$("tabs").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+  Array.prototype.forEach.call($("tabs").children,function(x){x.setAttribute("aria-selected",x===b?"true":"false")});
+  ["sug","rank","best","holes","timb"].forEach(function(k){$("p-"+k).hidden=(k!==b.getAttribute("data-p"))})});
+function choose(k){state.sel=k||null;$("sel").value=k||"";renderResult();renderPlayer();renderTable()}
+$("sel").addEventListener("change",function(){choose(this.value)});
+$("q").addEventListener("input",function(){state.q=this.value;renderTable()});
+$("tbl").addEventListener("click",function(e){var r=e.target.closest("tr[data-k]");if(r){choose(r.getAttribute("data-k"));window.scrollTo({top:0,behavior:"smooth"})}});
+$("tbl").addEventListener("keydown",function(e){if(e.key==="Enter"){var r=e.target.closest("tr[data-k]");if(r){choose(r.getAttribute("data-k"));window.scrollTo({top:0})}}});
+
+/* inicio de sesión y carga de datos (Supabase) */
+var sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,storageKey:"timba_sesion"}});
+var DOMINIO="timba.local";
+
+function salirBtn(){
+  if($("salir"))return;
+  var b=el("button","btn ghost","Cerrar sesión");b.id="salir";b.type="button";
+  b.onclick=function(){sb.auth.signOut().then(function(){location.reload()})};
+  $("meta").parentNode.appendChild(b);
+}
+function mostrarLogin(){
+  return new Promise(function(resolve){
+    var d=el("div");d.id="acc";
+    d.innerHTML='<form autocomplete="on" method="post" action="#"><h1>Handicap Timba</h1><p>Ingresa con el usuario y la clave de la Timba.</p>'
+      +'<label for="acc-u">Usuario</label><input name="username" id="acc-u" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>'
+      +'<label for="acc-c">Clave</label><input name="password" id="acc-c" type="password" autocomplete="current-password" required>'
+      +'<button class="btn" id="acc-b">Entrar</button><div class="err" role="alert" id="acc-e"></div></form>';
+    document.body.appendChild(d);
+    var f=d.querySelector("form"),err=$("acc-e"),btn=$("acc-b");
+    f.username.focus();
+    f.onsubmit=function(ev){
+      ev.preventDefault();err.textContent="";btn.disabled=true;
+      var u=f.username.value.trim().toLowerCase();
+      sb.auth.signInWithPassword({email:u.indexOf("@")>=0?u:u+"@"+DOMINIO,password:f.password.value}).then(function(r){
+        btn.disabled=false;
+        if(r.error){err.textContent="Usuario o clave incorrectos.";return}
+        try{if(window.PasswordCredential)navigator.credentials.store(new PasswordCredential({id:u,password:f.password.value,name:"Handicap Timba"}))}catch(e){}
+        d.remove();resolve();
+      });
+    };
+  });
+}
+function cargar(){
+  return sb.from("timbas").select("key,ev,fecha,inc,rounds").order("fecha",{ascending:true}).then(function(r){
+    if(r.error)throw r.error;
+    r.data.forEach(function(t){state.timbas[t.key]={key:t.key,ev:t.ev,date:t.fecha,inc:t.inc,rounds:t.rounds}});
+  });
+}
+(async function(){
+  var s=await sb.auth.getSession();
+  if(!s.data.session)await mostrarLogin();
+  try{await cargar()}catch(e){
+    $("meta").textContent="No se pudieron cargar los datos. Cierra sesión y vuelve a entrar.";
+  }
+  salirBtn();renderAll();
+})();
+
+</script>
+</body></html>
